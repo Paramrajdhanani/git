@@ -55,6 +55,18 @@ class ProfileView(View):
             repos = GitHubAPIService.get_user_repos(username)
             user_orgs = GitHubAPIService.get_user_orgs(username)
             
+            # Connections (Following & Followers)
+            user_following = []
+            user_followers = []
+            try:
+                user_following = GitHubAPIService.get_user_following(username)
+            except Exception:
+                pass
+            try:
+                user_followers = GitHubAPIService.get_user_followers(username)
+            except Exception:
+                pass
+
             # Analytics & Summaries
             stats = SkillAnalyzerService.analyze_profile(repos, profile)
             ai_summary = AISummaryService.generate_summary(profile, stats)
@@ -101,6 +113,8 @@ class ProfileView(View):
                 'stats': stats,
                 'ai_summary': ai_summary,
                 'user_orgs': user_orgs,
+                'user_following': user_following,
+                'user_followers': user_followers,
                 'is_favorite': is_favorite,
                 'created_formatted': format_date(profile.get('created_at')),
                 'updated_formatted': format_date(profile.get('updated_at')),

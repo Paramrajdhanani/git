@@ -112,18 +112,22 @@
   <!-- Animated Statistics Cards -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="100">
-      <div class="glass-card stat-card">
-        <div class="stat-icon"><i class="fas fa-users"></i></div>
-        <div class="stat-value counter-value" data-target="{{ profile.followers }}">0</div>
-        <div class="stat-label">Followers</div>
-      </div>
+      <a href="#community-section" onclick="switchCommunityTab('followers-tab')" class="text-decoration-none">
+        <div class="glass-card stat-card border-0 hover-lift">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-value counter-value" data-target="{{ profile.followers }}">0</div>
+          <div class="stat-label">Followers</div>
+        </div>
+      </a>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="150">
-      <div class="glass-card stat-card">
-        <div class="stat-icon"><i class="fas fa-user-friends"></i></div>
-        <div class="stat-value counter-value" data-target="{{ profile.following }}">0</div>
-        <div class="stat-label">Following</div>
-      </div>
+      <a href="#community-section" onclick="switchCommunityTab('following-tab')" class="text-decoration-none">
+        <div class="glass-card stat-card border-0 hover-lift">
+          <div class="stat-icon"><i class="fas fa-user-friends"></i></div>
+          <div class="stat-value counter-value" data-target="{{ profile.following }}">0</div>
+          <div class="stat-label">Following</div>
+        </div>
+      </a>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="200">
       <div class="glass-card stat-card">
@@ -225,6 +229,95 @@
         <h5 class="fw-bold mb-3"><i class="fas fa-database text-info me-2"></i> Repository Size (MB)</h5>
         <div style="position: relative; height: 240px;">
           <canvas id="sizeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub Community & Connections Section (Following & Followers) -->
+  <div class="mb-5" id="community-section" data-aos="fade-up">
+    <div class="glass-card p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 border-bottom border-secondary-subtle pb-3">
+        <div>
+          <h3 class="fw-bold mb-1 text-main">
+            <i class="fas fa-users text-primary me-2"></i> GitHub Community & Connections
+          </h3>
+          <p class="text-muted small mb-0">Explore developers @{{ profile.login }} is following and users who follow them.</p>
+        </div>
+
+        <!-- Connection Nav Tabs -->
+        <ul class="nav nav-pills gap-2" id="communityTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4" id="following-tab" data-bs-toggle="tab" data-bs-target="#following-tab-pane" type="button" role="tab">
+              <i class="fas fa-user-friends me-1"></i> Following <span class="badge bg-primary-subtle text-primary ms-1">{{ profile.following }}</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followers-tab-pane" type="button" role="tab">
+              <i class="fas fa-users me-1"></i> Followers <span class="badge bg-primary-subtle text-primary ms-1">{{ profile.followers }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="communityTabContent">
+        <!-- Following Tab Pane -->
+        <div class="tab-pane fade show active" id="following-tab-pane" role="tabpanel" tabindex="0">
+          {% if user_following %}
+            <div class="row g-3">
+              {% for u in user_following %}
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                  <div class="glass-card p-3 text-center h-100 user-connection-card">
+                    <img src="{{ u.avatar_url }}" alt="{{ u.login }}" class="rounded-circle mb-2 border border-primary border-2" style="width: 54px; height: 54px; object-fit: cover;">
+                    <h6 class="fw-bold text-truncate text-main mb-1" style="font-size: 0.9rem;">@{{ u.login }}</h6>
+                    <div class="d-flex flex-column gap-1 mt-2">
+                      <a href="{% url 'finder:profile' username=u.login %}" class="btn btn-xs btn-primary rounded-pill py-1 px-2" style="font-size: 0.75rem;">
+                        View Profile
+                      </a>
+                      <a href="{{ u.html_url }}" target="_blank" class="text-muted small" style="font-size: 0.7rem;">
+                        GitHub <i class="fas fa-external-link-alt ms-1" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
+              <p class="text-muted mb-0">This developer is not following anyone publicly yet.</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Followers Tab Pane -->
+        <div class="tab-pane fade" id="followers-tab-pane" role="tabpanel" tabindex="0">
+          {% if user_followers %}
+            <div class="row g-3">
+              {% for u in user_followers %}
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                  <div class="glass-card p-3 text-center h-100 user-connection-card">
+                    <img src="{{ u.avatar_url }}" alt="{{ u.login }}" class="rounded-circle mb-2 border border-info border-2" style="width: 54px; height: 54px; object-fit: cover;">
+                    <h6 class="fw-bold text-truncate text-main mb-1" style="font-size: 0.9rem;">@{{ u.login }}</h6>
+                    <div class="d-flex flex-column gap-1 mt-2">
+                      <a href="{% url 'finder:profile' username=u.login %}" class="btn btn-xs btn-outline-primary rounded-pill py-1 px-2" style="font-size: 0.75rem;">
+                        View Profile
+                      </a>
+                      <a href="{{ u.html_url }}" target="_blank" class="text-muted small" style="font-size: 0.7rem;">
+                        GitHub <i class="fas fa-external-link-alt ms-1" style="font-size: 0.65rem;"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <i class="fas fa-users-slash fa-2x text-muted mb-2"></i>
+              <p class="text-muted mb-0">This developer has no public followers listed yet.</p>
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -362,4 +455,13 @@
 {% block extra_js %}
 <script src="/static/js/charts.js"></script>
 <script src="/static/js/filter.js"></script>
+<script>
+function switchCommunityTab(tabId) {
+  const tabBtn = document.getElementById(tabId);
+  if (tabBtn) {
+    const tab = new bootstrap.Tab(tabBtn);
+    tab.show();
+  }
+}
+</script>
 {% endblock %}

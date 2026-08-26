@@ -464,6 +464,48 @@ a:hover {
   padding: 1.5rem;
 }
 
+/* User Connection Cards (Following & Followers) */
+.user-connection-card {
+  transition: var(--transition-smooth);
+}
+
+.user-connection-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-glow-hover);
+}
+
+.hover-lift {
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-glow-hover);
+}
+
+/* Nav Pills Styling */
+.nav-pills .nav-link {
+  color: var(--text-muted);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--glass-border);
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.nav-pills .nav-link.active, .nav-pills .nav-link:hover {
+  background: var(--primary-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 15px rgba(56, 139, 253, 0.35);
+}
+
+.nav-pills .nav-link.active .badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
 /* Footer Styling */
 footer {
   margin-top: auto;
