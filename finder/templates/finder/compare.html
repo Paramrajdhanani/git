@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Developers - GitHub Profile Finder{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  
+  <div class="text-center mb-5" data-aos="fade-down">
+    <h1 class="hero-title mb-2">GitHub User Comparison</h1>
+    <p class="text-muted">Compare two GitHub developers side-by-side across key open-source metrics.</p>
+    
+    <!-- Compare Input Form -->
+    <div class="glass-card p-4 max-width-700 mx-auto mt-4">
+      <form action="{% url 'finder:compare' %}" method="GET" class="row g-3 align-items-center">
+        <div class="col-md-5">
+          <input type="text" name="u1" class="form-control glass-card text-main border-secondary rounded-pill" placeholder="User 1 (e.g. torvalds)" value="{{ u1 }}" required>
+        </div>
+        <div class="col-md-2 text-center">
+          <span class="badge bg-primary rounded-circle p-2 fs-6">VS</span>
+        </div>
+        <div class="col-md-5">
+          <input type="text" name="u2" class="form-control glass-card text-main border-secondary rounded-pill" placeholder="User 2 (e.g. gaearon)" value="{{ u2 }}" required>
+        </div>
+        <div class="col-12 mt-3 text-center">
+          <button type="submit" class="btn btn-primary rounded-pill px-5">
+            <i class="fas fa-balance-scale me-2"></i> Compare Developers
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if comparison %}
+    <div class="row g-4 mb-5" data-aos="fade-up">
+      
+      <!-- Developer 1 Card -->
+      <div class="col-md-6">
+        <div class="glass-card p-4 h-100 border border-primary">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <img src="{{ comparison.user1.profile.avatar_url }}" class="rounded-circle border border-primary border-3" style="width: 80px; height: 80px;" alt="">
+            <div>
+              <h3 class="fw-bold mb-0 text-main">{{ comparison.user1.profile.name|default:comparison.user1.profile.login }}</h3>
+              <a href="{% url 'finder:profile' username=comparison.user1.profile.login %}" class="text-primary fw-semibold">@{{ comparison.user1.profile.login }}</a>
+              <div class="small text-muted">{{ comparison.user1.stats.developer_type }}</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-borderless text-main align-middle mb-0">
+              <tbody>
+                <tr>
+                  <td>Followers</td>
+                  <td class="text-end fw-bold fs-5">
+                    {{ comparison.user1.profile.followers }}
+                    {% if comparison.winners.followers == comparison.user1.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Public Repositories</td>
+                  <td class="text-end fw-bold fs-5">
+                    {{ comparison.user1.profile.public_repos }}
+                    {% if comparison.winners.repos == comparison.user1.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Stars</td>
+                  <td class="text-end fw-bold fs-5 text-warning">
+                    {{ comparison.user1.stats.total_stars }}
+                    {% if comparison.winners.stars == comparison.user1.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Forks</td>
+                  <td class="text-end fw-bold fs-5 text-info">
+                    {{ comparison.user1.stats.total_forks }}
+                    {% if comparison.winners.forks == comparison.user1.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Primary Language</td>
+                  <td class="text-end fw-bold">{{ comparison.user1.stats.primary_language }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Developer 2 Card -->
+      <div class="col-md-6">
+        <div class="glass-card p-4 h-100 border border-info">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <img src="{{ comparison.user2.profile.avatar_url }}" class="rounded-circle border border-info border-3" style="width: 80px; height: 80px;" alt="">
+            <div>
+              <h3 class="fw-bold mb-0 text-main">{{ comparison.user2.profile.name|default:comparison.user2.profile.login }}</h3>
+              <a href="{% url 'finder:profile' username=comparison.user2.profile.login %}" class="text-info fw-semibold">@{{ comparison.user2.profile.login }}</a>
+              <div class="small text-muted">{{ comparison.user2.stats.developer_type }}</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-borderless text-main align-middle mb-0">
+              <tbody>
+                <tr>
+                  <td>Followers</td>
+                  <td class="text-end fw-bold fs-5">
+                    {{ comparison.user2.profile.followers }}
+                    {% if comparison.winners.followers == comparison.user2.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Public Repositories</td>
+                  <td class="text-end fw-bold fs-5">
+                    {{ comparison.user2.profile.public_repos }}
+                    {% if comparison.winners.repos == comparison.user2.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Stars</td>
+                  <td class="text-end fw-bold fs-5 text-warning">
+                    {{ comparison.user2.stats.total_stars }}
+                    {% if comparison.winners.stars == comparison.user2.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Forks</td>
+                  <td class="text-end fw-bold fs-5 text-info">
+                    {{ comparison.user2.stats.total_forks }}
+                    {% if comparison.winners.forks == comparison.user2.profile.login %}
+                      <span class="badge bg-success ms-1"><i class="fas fa-trophy"></i> Winner</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Primary Language</td>
+                  <td class="text-end fw-bold">{{ comparison.user2.stats.primary_language }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

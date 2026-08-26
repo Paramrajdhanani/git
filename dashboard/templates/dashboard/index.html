@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - GitHub Profile Finder{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-down">
+    <div>
+      <h1 class="fw-bold mb-1 text-main">Personal Dashboard</h1>
+      <p class="text-muted mb-0">Welcome back, @{{ user.username }}! Here are your saved profiles & history.</p>
+    </div>
+
+    <a href="{% url 'finder:home' %}" class="btn btn-primary rounded-pill px-4">
+      <i class="fas fa-search me-1"></i> New Search
+    </a>
+  </div>
+
+  <!-- Dashboard Overview Stat Cards -->
+  <div class="row g-4 mb-5" data-aos="fade-up">
+    <div class="col-md-6">
+      <div class="glass-card p-4 d-flex align-items-center gap-4">
+        <div class="stat-icon text-warning"><i class="fas fa-star fa-2x"></i></div>
+        <div>
+          <div class="stat-value counter-value" data-target="{{ total_favorites }}">0</div>
+          <div class="stat-label">Favorited Developers</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="glass-card p-4 d-flex align-items-center gap-4">
+        <div class="stat-icon text-info"><i class="fas fa-history fa-2x"></i></div>
+        <div>
+          <div class="stat-value counter-value" data-target="{{ total_searches }}">0</div>
+          <div class="stat-label">Total Searches Recorded</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Favorite Profiles Grid -->
+  <section class="mb-5" data-aos="fade-up">
+    <h3 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i> Favorite Profiles</h3>
+    
+    {% if favorites %}
+      <div class="row g-4">
+        {% for fav in favorites %}
+          <div class="col-md-6 col-lg-4">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <img src="{{ fav.avatar_url|default:'https://github.com/github.png' }}" class="rounded-circle border border-warning border-2" style="width: 55px; height: 55px;" alt="">
+                <div>
+                  <h5 class="fw-bold mb-0 text-main">{{ fav.name|default:fav.username }}</h5>
+                  <a href="{% url 'finder:profile' username=fav.username %}" class="text-warning fw-semibold">@{{ fav.username }}</a>
+                </div>
+              </div>
+
+              {% if fav.bio %}
+                <p class="text-muted small mb-3">{{ fav.bio|truncatewords:12 }}</p>
+              {% endif %}
+
+              <div class="pt-3 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Saved {{ fav.created_at|date:"M d, Y" }}</span>
+                <a href="{% url 'finder:profile' username=fav.username %}" class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                  View <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="glass-card p-5 text-center">
+        <i class="far fa-star fa-3x text-muted mb-3"></i>
+        <h4>No favorite profiles saved yet</h4>
+        <p class="text-muted">Click the star button on any profile page to bookmark developers here.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Search History Table -->
+  <section data-aos="fade-up">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="fw-bold mb-0"><i class="fas fa-history text-info me-2"></i> Recent Search History</h3>
+      {% if search_history %}
+        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btn-clear-history">
+          <i class="fas fa-trash me-1"></i> Clear History
+        </button>
+      {% endif %}
+    </div>
+
+    {% if search_history %}
+      <div class="glass-card overflow-hidden">
+        <div class="table-responsive">
+          <table class="table table-hover text-main align-middle mb-0">
+            <thead>
+              <tr class="border-bottom border-secondary">
+                <th class="ps-4">Developer</th>
+                <th>Username</th>
+                <th>Searched Date</th>
+                <th class="text-end pe-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in search_history %}
+                <tr>
+                  <td class="ps-4">
+                    <div class="d-flex align-items-center gap-2">
+                      <img src="{{ item.avatar_url|default:'https://github.com/github.png' }}" class="rounded-circle" style="width: 32px; height: 32px;" alt="">
+                      <span class="fw-semibold">@{{ item.username }}</span>
+                    </div>
+                  </td>
+                  <td><code>{{ item.username }}</code></td>
+                  <td class="text-muted small">{{ item.searched_at|date:"M d, Y H:i" }}</td>
+                  <td class="text-end pe-4">
+                    <a href="{% url 'finder:profile' username=item.username %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                      View Profile
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="glass-card p-5 text-center">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4>No search history recorded yet</h4>
+        <p class="text-muted">Searches performed while logged in will automatically appear here.</p>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('btn-clear-history')?.addEventListener('click', () => {
+  Swal.fire({
+    title: 'Clear Search History?',
+    text: 'This will remove all recorded search items from your history.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f85149',
+    confirmButtonText: 'Yes, clear all'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch('/history/api/clear/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken() }
+      })
+      .then(res => res.json())
+      .then(data => {
+        window.location.reload();
+      });
+    }
+  });
+});
+</script>
+{% endblock %}

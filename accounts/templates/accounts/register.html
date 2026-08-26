@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - GitHub Profile Finder{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="glass-card p-4 p-md-5 max-width-600 mx-auto" data-aos="zoom-in">
+    <div class="text-center mb-4">
+      <i class="fas fa-user-plus fa-3x text-primary mb-2"></i>
+      <h2 class="fw-bold text-main">Create Your Account</h2>
+      <p class="text-muted small">Save favorite developer profiles and keep track of your search analytics.</p>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label text-main fw-semibold">First Name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label text-main fw-semibold">Last Name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-main fw-semibold">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-main fw-semibold">Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label text-main fw-semibold">Password</label>
+          {{ form.password }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label text-main fw-semibold">Confirm Password</label>
+          {{ form.confirm_password }}
+          {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">
+        Create Account <i class="fas fa-arrow-right ms-1"></i>
+      </button>
+
+      <div class="text-center small text-muted">
+        Already have an account? <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold">Sign in here</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
