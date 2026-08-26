@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}@{{ profile.login }} - GitHub Profile Finder{% endblock %}
+
+{% block content %}
+<!-- Hidden Chart Data Payload -->
+{{ stats.languages|json_script:"chart-languages-data" }}
+{{ repos|json_script:"chart-stars-data" }}
+
+<div class="container py-4">
+  
+  <!-- Profile Header Card -->
+  <div class="glass-card p-4 p-md-5 mb-4" data-aos="fade-down">
+    <div class="row align-items-center g-4">
+      <div class="col-md-auto text-center">
+        <div class="profile-avatar-wrapper">
+          <img src="{{ profile.avatar_url }}" alt="{{ profile.login }}" class="profile-avatar">
+          {% if profile.hireable %}
+            <span class="badge-hireable"><i class="fas fa-briefcase me-1"></i> Hireable</span>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="col-md">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
+          <div>
+            <h2 class="fw-bold mb-0 text-main">{{ profile.name|default:profile.login }}</h2>
+            <a href="{{ profile.html_url }}" target="_blank" class="text-primary fw-semibold fs-5">@{{ profile.login }}</a>
+          </div>
+
+          <!-- Profile Quick Action Buttons -->
+          <div class="d-flex flex-wrap gap-2 no-print">
+            <button 
+              class="btn {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %} rounded-pill px-3 btn-favorite-toggle"
+              data-username="{{ profile.login }}"
+              data-name="{{ profile.name|default:profile.login }}"
+              data-avatar="{{ profile.avatar_url }}"
+              data-bio="{{ profile.bio|default:'' }}"
+            >
+              <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-star me-1"></i>
+              Favorite
+            </button>
+
+            <button class="btn btn-outline-secondary rounded-pill px-3" onclick="copyProfileUrl()">
+              <i class="fas fa-copy me-1"></i> Copy Link
+            </button>
+
+            <div class="dropdown">
+              <button class="btn btn-primary rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-1"></i> Export
+              </button>
+              <ul class="dropdown-menu glass-card border-0">
+                <li><a class="dropdown-item text-main" href="{% url 'finder:export_csv' username=profile.login %}"><i class="fas fa-file-csv me-2 text-success"></i> Repositories (CSV)</a></li>
+                <li><a class="dropdown-item text-main" href="{% url 'finder:export_json' username=profile.login %}"><i class="fas fa-file-code me-2 text-warning"></i> Full Profile (JSON)</a></li>
+                <li><a class="dropdown-item text-main" href="javascript:window.print()"><i class="fas fa-file-pdf me-2 text-danger"></i> Print / PDF Report</a></li>
+              </ul>
+            </div>
+
+            <a href="{% url 'finder:compare' %}?u1={{ profile.login }}" class="btn btn-outline-info rounded-pill px-3">
+              <i class="fas fa-balance-scale me-1"></i> Compare
+            </a>
+          </div>
+        </div>
+
+        {% if profile.bio %}
+          <p class="text-main mb-3 fs-6">{{ profile.bio }}</p>
+        {% endif %}
+
+        <!-- Profile Metadata Badges -->
+        <div class="d-flex flex-wrap gap-3 text-muted small">
+          {% if profile.company %}
+            <div><i class="fas fa-building text-primary me-1"></i> {{ profile.company }}</div>
+          {% endif %}
+          {% if profile.location %}
+            <div><i class="fas fa-map-marker-alt text-danger me-1"></i> {{ profile.location }}</div>
+          {% endif %}
+          {% if profile.blog %}
+            <div>
+              <i class="fas fa-link text-info me-1"></i>
+              <a href="{{ profile.blog }}" target="_blank" class="text-info">{{ profile.blog }}</a>
+            </div>
+          {% endif %}
+          {% if profile.twitter_username %}
+            <div>
+              <i class="fab fa-twitter text-primary me-1"></i>
+              <a href="https://twitter.com/{{ profile.twitter_username }}" target="_blank" class="text-primary">@{{ profile.twitter_username }}</a>
+            </div>
+          {% endif %}
+          {% if profile.email %}
+            <div><i class="fas fa-envelope text-warning me-1"></i> {{ profile.email }}</div>
+          {% endif %}
+          <div><i class="fas fa-calendar-alt text-success me-1"></i> Joined {{ created_formatted }}</div>
+        </div>
+
+        {% if user_orgs %}
+          <div class="mt-3 pt-3 border-top border-secondary-subtle">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="small text-muted fw-semibold me-1"><i class="fas fa-sitemap me-1 text-primary"></i> Organizations:</span>
+              {% for org in user_orgs %}
+                <a href="{% url 'finder:org_detail' orgname=org.login %}" class="badge bg-secondary-subtle text-main border border-secondary text-decoration-none d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" title="{{ org.login }}">
+                  <img src="{{ org.avatar_url }}" alt="{{ org.login }}" class="rounded-circle" style="width: 16px; height: 16px;">
+                  <span>{{ org.login }}</span>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Animated Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="100">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value counter-value" data-target="{{ profile.followers }}">0</div>
+        <div class="stat-label">Followers</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="150">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-user-friends"></i></div>
+        <div class="stat-value counter-value" data-target="{{ profile.following }}">0</div>
+        <div class="stat-label">Following</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="200">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-code-branch"></i></div>
+        <div class="stat-value counter-value" data-target="{{ profile.public_repos }}">0</div>
+        <div class="stat-label">Repositories</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="250">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-star text-warning"></i></div>
+        <div class="stat-value counter-value" data-target="{{ stats.total_stars }}">0</div>
+        <div class="stat-label">Total Stars</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="300">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-code-fork text-info"></i></div>
+        <div class="stat-value counter-value" data-target="{{ stats.total_forks }}">0</div>
+        <div class="stat-label">Total Forks</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="350">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fas fa-eye text-primary"></i></div>
+        <div class="stat-value counter-value" data-target="{{ stats.total_watchers }}">0</div>
+        <div class="stat-label">Watchers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Profile Insights & Developer Skill Analysis -->
+  <div class="row g-4 mb-4">
+    <!-- AI Summary Box -->
+    <div class="col-lg-7" data-aos="fade-right">
+      <div class="ai-summary-box h-100">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="fas fa-robot fa-lg text-primary"></i>
+          <h4 class="fw-bold mb-0">AI Developer Summary</h4>
+        </div>
+        <h6 class="fw-semibold text-primary mb-3">{{ ai_summary.headline }}</h6>
+        <ul class="mb-0 ps-3">
+          {% for insight in ai_summary.insights %}
+            <li class="mb-2">{{ insight|safe }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Skill Matrix Box -->
+    <div class="col-lg-5" data-aos="fade-left">
+      <div class="glass-card p-4 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0"><i class="fas fa-code text-primary me-2"></i> Skill Breakdown</h5>
+          <span class="badge bg-primary-subtle text-primary">{{ stats.developer_type }}</span>
+        </div>
+        
+        <p class="text-muted small mb-3">Language distribution across public repositories:</p>
+        
+        {% for lang, pct in stats.lang_percentages.items %}
+          {% if forloop.counter <= 5 %}
+            <div class="mb-2">
+              <div class="d-flex justify-content-between text-main small fw-semibold mb-1">
+                <span>{{ lang }}</span>
+                <span>{{ pct }}%</span>
+              </div>
+              <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1);">
+                <div class="progress-bar" role="progressbar" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100" style="--bar-width: {{ pct }}%; width: var(--bar-width, 0%); background: var(--primary-accent);"></div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Visualizations Grid -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
+      <div class="glass-card p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="fas fa-chart-pie text-primary me-2"></i> Language Usage</h5>
+        <div style="position: relative; height: 240px;">
+          <canvas id="languageDoughnutChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
+      <div class="glass-card p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i> Most Starred Repos</h5>
+        <div style="position: relative; height: 240px;">
+          <canvas id="starsBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
+      <div class="glass-card p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="fas fa-database text-info me-2"></i> Repository Size (MB)</h5>
+        <div style="position: relative; height: 240px;">
+          <canvas id="sizeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Repositories Header & Instant Filter Bar -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+    <div>
+      <h3 class="fw-bold mb-0">
+        <i class="fas fa-book-bookmark text-primary me-2"></i> Public Repositories
+        <span class="badge bg-primary-subtle text-primary ms-2" id="visible-repo-count">{{ repos|length }}</span>
+      </h3>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="d-flex flex-wrap gap-2 filter-controls">
+      <input type="text" id="repo-search-input" class="form-control glass-card text-main border-secondary rounded-pill px-3" placeholder="Filter by name..." style="max-width: 200px;">
+      
+      <select id="repo-lang-filter" class="form-select glass-card text-main border-secondary rounded-pill" style="max-width: 150px;">
+        <option value="all">All Languages</option>
+        {% for lang in stats.languages.keys %}
+          <option value="{{ lang }}">{{ lang }}</option>
+        {% endfor %}
+      </select>
+
+      <select id="repo-sort-filter" class="form-select glass-card text-main border-secondary rounded-pill" style="max-width: 160px;">
+        <option value="stars-desc">Most Stars</option>
+        <option value="newest">Recently Updated</option>
+        <option value="oldest">Oldest</option>
+        <option value="name">Alphabetical</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Repositories Grid Container -->
+  <div class="row g-4" id="repo-grid">
+    {% for repo in repos %}
+      <div 
+        class="col-md-6 col-lg-4 repo-item-col"
+        data-name="{{ repo.name|lower }}"
+        data-desc="{{ repo.description|default:''|lower }}"
+        data-lang="{{ repo.language|default:'n/a' }}"
+        data-stars="{{ repo.stargazers_count }}"
+        data-updated="{{ repo.updated_at }}"
+      >
+        <div class="glass-card repo-card d-flex flex-column h-100">
+          <div>
+            <div class="repo-title mb-2 d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+                <i class="far fa-folder text-primary flex-shrink-0"></i>
+                <a href="{{ repo.html_url }}" target="_blank" class="text-main text-truncate fw-bold">{{ repo.name }}</a>
+              </div>
+              {% if repo.fork %}
+                <span class="badge bg-secondary-subtle text-secondary small flex-shrink-0">Fork</span>
+              {% endif %}
+            </div>
+
+            <p class="text-muted small mb-3 text-break" style="min-height: 40px;">
+              {{ repo.description|default:"No description provided."|truncatewords:15 }}
+            </p>
+
+            <!-- Topics Badges -->
+            {% if repo.topics %}
+              <div class="d-flex flex-wrap gap-1 mb-3">
+                {% for topic in repo.topics %}
+                  {% if forloop.counter <= 4 %}
+                    <span class="topic-badge">#{{ topic }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Action Buttons Bar & Footer Metrics -->
+          <div class="pt-3 border-top border-secondary-subtle mt-auto">
+            <!-- Action Toolbar: Download ZIP, Copy Clone, GitHub Link -->
+            <div class="d-flex flex-wrap gap-1 mb-2 no-print">
+              <a href="{{ repo.zip_download_url }}" download class="btn btn-sm btn-primary rounded-pill px-2 py-1 small text-decoration-none" title="Download ZIP Archive">
+                <i class="fas fa-download me-1"></i> Download ZIP
+              </a>
+              <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 small btn-copy-clone" data-clone="{{ repo.clone_url }}" title="Copy Git Clone Command">
+                <i class="fas fa-terminal me-1"></i> Clone
+              </button>
+              <a href="{{ repo.html_url }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 small ms-auto" title="View on GitHub">
+                <i class="fab fa-github"></i>
+              </a>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between small text-muted">
+              <div>
+                {% if repo.language %}
+                  <span class="repo-lang-badge">
+                    <span class="repo-lang-dot bg-primary"></span>
+                    {{ repo.language }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+                {% if repo.license_name %}
+                  <span class="badge bg-surface-elevated text-muted border ms-1" style="font-size: 0.7rem;">{{ repo.license_name }}</span>
+                {% endif %}
+              </div>
+              <div class="d-flex gap-2">
+                <span><i class="fas fa-star text-warning me-1"></i>{{ repo.stargazers_count }}</span>
+                <span><i class="fas fa-code-fork text-info me-1"></i>{{ repo.forks_count }}</span>
+                <span><i class="fas fa-database me-1"></i>{{ repo.formatted_size }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12 text-center py-5">
+        <div class="glass-card p-5">
+          <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+          <h4>No public repositories found</h4>
+          <p class="text-muted">This user hasn't created any public repositories yet.</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Empty State for Filters -->
+  <div id="repo-empty-state" class="text-center py-5" style="display: none;">
+    <div class="glass-card p-5 max-width-500 mx-auto">
+      <i class="fas fa-search fa-3x text-muted mb-3"></i>
+      <h4>No matching repositories</h4>
+      <p class="text-muted">Try clearing your search query or selecting a different language filter.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/filter.js"></script>
+{% endblock %}
