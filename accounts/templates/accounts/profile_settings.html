@@ -16,6 +16,15 @@
     <form method="POST">
       {% csrf_token %}
       
+      <div class="mb-4 d-flex align-items-center gap-3 p-3 glass-card bg-surface-elevated">
+        <img id="avatar-preview" src="{{ user.profile.avatar_url|default:'https://github.com/github.png' }}" class="rounded-circle border border-primary border-2" style="width: 64px; height: 64px; object-fit: cover;" alt="Avatar Preview">
+        <div class="flex-grow-1">
+          <label class="form-label text-main fw-semibold mb-1">Profile Photo URL</label>
+          {{ form.avatar_url }}
+          <div class="form-text small text-muted">Paste an image link (GitHub avatar, Gravatar, Imgur, etc.)</div>
+        </div>
+      </div>
+
       <div class="mb-3">
         <label class="form-label text-main fw-semibold">Default Theme Preference</label>
         {{ form.theme_preference }}

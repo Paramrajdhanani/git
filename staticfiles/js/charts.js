@@ -1,12 +1,15 @@
 /* ==========================================================================
-   GitHub Profile Finder - Chart.js Data Visualizations
+   GitHub Profile Finder - Dynamic Theme-Aware Chart.js Visualizations
    ========================================================================== */
+
+const activeCharts = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof Chart === 'undefined') return;
 
   const langDataEl = document.getElementById('chart-languages-data');
   const starDataEl = document.getElementById('chart-stars-data');
+  const dnaDataEl = document.getElementById('chart-dna-data');
 
   if (langDataEl) {
     try {
@@ -26,7 +29,59 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Error parsing stars chart data:", e);
     }
   }
+
+  if (dnaDataEl) {
+    try {
+      const dnaData = JSON.parse(dnaDataEl.textContent);
+      initDnaChart(dnaData);
+    } catch (e) {
+      console.error("Error parsing DNA chart data:", e);
+    }
+  }
+
+  // Listen for real-time theme changes
+  window.addEventListener('themeChanged', () => {
+    updateChartsTheme();
+  });
 });
+
+function getThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    textMain: styles.getPropertyValue('--text-main').trim() || '#f0f6fc',
+    textMuted: styles.getPropertyValue('--text-muted').trim() || '#8b949e',
+    gridLine: styles.getPropertyValue('--glass-border').trim() || 'rgba(255, 255, 255, 0.08)',
+  };
+}
+
+function updateChartsTheme() {
+  const colors = getThemeColors();
+  
+  activeCharts.forEach(chart => {
+    if (!chart) return;
+    
+    if (chart.options.plugins?.legend?.labels) {
+      chart.options.plugins.legend.labels.color = colors.textMain;
+    }
+    
+    if (chart.options.scales?.x) {
+      if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = colors.textMuted;
+    }
+    
+    if (chart.options.scales?.y) {
+      if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = colors.textMuted;
+      if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = colors.gridLine;
+    }
+    
+    if (chart.options.scales?.r) {
+      if (chart.options.scales.r.ticks) chart.options.scales.r.ticks.color = colors.textMuted;
+      if (chart.options.scales.r.pointLabels) chart.options.scales.r.pointLabels.color = colors.textMain;
+      if (chart.options.scales.r.grid) chart.options.scales.r.grid.color = colors.gridLine;
+    }
+
+    chart.update();
+  });
+}
 
 const LANGUAGE_COLORS = {
   'Python': '#3572A5',
@@ -63,8 +118,9 @@ function initLanguageChart(data) {
   const labels = Object.keys(data);
   const values = Object.values(data);
   const colors = labels.map((l, idx) => getLangColor(l, idx));
+  const themeColors = getThemeColors();
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: labels,
@@ -82,7 +138,7 @@ function initLanguageChart(data) {
         legend: {
           position: 'right',
           labels: {
-            color: getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() || '#f0f6fc',
+            color: themeColors.textMain,
             font: { family: 'Inter', size: 12 }
           }
         },
@@ -93,8 +149,16 @@ function initLanguageChart(data) {
         }
       },
       cutout: '70%',
+      animation: {
+        animateScale: true,
+        animateRotate: true,
+        duration: 1400,
+        easing: 'easeOutQuart'
+      }
     }
   });
+
+  activeCharts.push(chart);
 }
 
 // Repository Stars Bar Chart
@@ -102,12 +166,12 @@ function initStarsChart(repos) {
   const ctx = document.getElementById('starsBarChart');
   if (!ctx) return;
 
-  // Filter top 8 starred repos
   const sortedRepos = [...repos].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 8);
   const labels = sortedRepos.map(r => r.name);
   const values = sortedRepos.map(r => r.stargazers_count);
+  const themeColors = getThemeColors();
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -125,19 +189,25 @@ function initStarsChart(repos) {
       maintainAspectRatio: false,
       scales: {
         x: {
-          ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
+          ticks: { color: themeColors.textMuted },
           grid: { display: false }
         },
         y: {
-          ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
-          grid: { color: 'rgba(255, 255, 255, 0.05)' }
+          ticks: { color: themeColors.textMuted },
+          grid: { color: themeColors.gridLine }
         }
       },
       plugins: {
         legend: { display: false }
+      },
+      animation: {
+        duration: 1200,
+        easing: 'easeOutQuart'
       }
     }
   });
+
+  activeCharts.push(chart);
 }
 
 // Repository Size Chart
@@ -148,8 +218,9 @@ function initSizeChart(repos) {
   const sortedRepos = [...repos].sort((a, b) => b.size - a.size).slice(0, 8);
   const labels = sortedRepos.map(r => r.name);
   const values = sortedRepos.map(r => Math.round(r.size / 1024 * 10) / 10); // in MB
+  const themeColors = getThemeColors();
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
@@ -167,17 +238,72 @@ function initSizeChart(repos) {
       maintainAspectRatio: false,
       scales: {
         x: {
-          ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
+          ticks: { color: themeColors.textMuted },
           grid: { display: false }
         },
         y: {
-          ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
-          grid: { color: 'rgba(255, 255, 255, 0.05)' }
+          ticks: { color: themeColors.textMuted },
+          grid: { color: themeColors.gridLine }
         }
       },
       plugins: {
         legend: { display: false }
+      },
+      animation: {
+        duration: 1300,
+        easing: 'easeOutQuart'
       }
     }
   });
+
+  activeCharts.push(chart);
 }
+
+// Developer DNA Radar Chart
+function initDnaChart(dnaData) {
+  const ctx = document.getElementById('dnaRadarChart');
+  if (!ctx) return;
+
+  const labels = Object.keys(dnaData);
+  const values = Object.values(dnaData);
+  const themeColors = getThemeColors();
+
+  const chart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'DNA Score',
+        data: values,
+        backgroundColor: 'rgba(35, 134, 54, 0.25)',
+        borderColor: '#2ea043',
+        pointBackgroundColor: '#2ea043',
+        pointBorderColor: '#fff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { color: themeColors.gridLine },
+          grid: { color: themeColors.gridLine },
+          pointLabels: { color: themeColors.textMain, font: { family: 'Inter', size: 10 } },
+          ticks: { display: false, max: 100 }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      },
+      animation: {
+        duration: 1500,
+        easing: 'easeInOutCubic'
+      }
+    }
+  });
+
+  activeCharts.push(chart);
+}
+
+

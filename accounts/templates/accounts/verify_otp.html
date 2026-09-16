@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Email - GitHub Profile Finder{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* 6-Digit OTP Box Grid Styling - Mobile First */
+  .otp-inputs-grid {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 1.5rem 0;
+  }
+
+  .otp-digit-box {
+    width: 48px;
+    height: 58px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: 'Fira Code', monospace;
+    color: var(--primary-accent);
+    background: var(--input-bg);
+    border: 2px solid var(--glass-border);
+    border-radius: 14px;
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .otp-digit-box:focus {
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35), 0 0 20px rgba(56, 189, 248, 0.4);
+    background: var(--bg-surface-elevated);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  .otp-digit-box.filled {
+    border-color: rgba(56, 189, 248, 0.7);
+    background: var(--bg-surface-elevated);
+  }
+
+  @media (max-width: 420px) {
+    .otp-inputs-grid {
+      gap: 6px;
+    }
+    .otp-digit-box {
+      width: 40px;
+      height: 50px;
+      font-size: 1.35rem;
+      border-radius: 10px;
+    }
+  }
+
+  /* Animated Envelope Icon Pulse */
+  .email-icon-pulse {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 76px;
+    height: 76px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(129, 140, 248, 0.15) 100%);
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 10px 30px rgba(56, 189, 248, 0.25);
+  }
+
+  .email-icon-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 28px;
+    border: 1.5px dashed rgba(56, 189, 248, 0.4);
+    animation: rotateSlow 20s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes rotateSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+  <div class="glass-card p-4 p-md-5 max-width-600 mx-auto" data-aos="zoom-in">
+
+    <!-- Header Section -->
+    <div class="text-center mb-4">
+      <div class="email-icon-pulse mb-3">
+        <i class="fas fa-envelope-open-text fa-2x text-primary"></i>
+      </div>
+
+      <h2 class="fw-bold text-main mb-1">Verify Your Email</h2>
+      <p class="text-muted small mb-3">
+        Enter the 6-digit verification code sent to your Gmail
+      </p>
+
+      <!-- Recipient Email Pill -->
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill" style="background: var(--bg-surface-elevated); border: 1px solid var(--glass-border-hover);">
+        <i class="fas fa-at text-primary small"></i>
+        <strong class="text-main small">{{ email }}</strong>
+        <a href="{% url 'accounts:register' %}" class="text-primary small text-decoration-none ms-1" title="Change Email">
+          <i class="fas fa-pen small" style="font-size: 0.75rem;"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Django Alert Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show glass-card border-0 mb-3" role="alert">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle text-success{% else %}fa-exclamation-circle text-danger{% endif %}"></i>
+            <div>{{ message }}</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- OTP Form -->
+    <form method="POST" action="{% url 'accounts:verify_otp' %}" id="otpForm">
+      {% csrf_token %}
+
+      <!-- Hidden Combined OTP Field -->
+      <input type="hidden" name="otp" id="combinedOtpInput" required>
+
+      <!-- 6 Segmented PIN Inputs (Mobile First) -->
+      <div class="otp-inputs-grid" id="otpBoxContainer">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autofocus data-index="0" aria-label="Digit 1">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1" aria-label="Digit 2">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="2" aria-label="Digit 3">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3" aria-label="Digit 4">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4" aria-label="Digit 5">
+        <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="5" aria-label="Digit 6">
+      </div>
+
+      <!-- Quick Actions (Paste from Clipboard & Expiry Notice) -->
+      <div class="d-flex align-items-center justify-content-between mb-4 px-1">
+        <span class="text-muted small d-inline-flex align-items-center gap-1">
+          <i class="far fa-clock text-warning"></i> Valid for 10 mins
+        </span>
+
+        <button type="button" id="pasteOtpBtn" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3 text-main small" style="font-size: 0.78rem;">
+          <i class="fas fa-paste text-primary me-1"></i> Paste Code
+        </button>
+      </div>
+
+      <!-- Verify Button -->
+      <button type="submit" id="verifyBtn" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3 shadow">
+        <span class="verify-text d-inline-flex align-items-center gap-2">
+          <i class="fas fa-shield-check"></i> Verify & Activate Account
+        </span>
+        <span class="verify-loading d-none align-items-center justify-content-center gap-2">
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          Verifying code...
+        </span>
+      </button>
+    </form>
+
+    <!-- Resend OTP Timer & Trigger -->
+    <div class="text-center pt-2">
+      <div id="resendCountdownWrapper" class="text-muted small mb-2">
+        <span class="d-inline-flex align-items-center gap-1">
+          <i class="fas fa-history text-muted"></i> Didn't receive code? Resend in <strong class="text-primary ms-1" id="countdownTimer">0:59</strong>
+        </span>
+      </div>
+
+      <div id="resendBtnWrapper" class="d-none">
+        <p class="text-muted small mb-2">Didn't get the OTP code?</p>
+        <a href="{% url 'accounts:resend_otp' %}" class="btn btn-outline-primary rounded-pill px-4 hover-lift">
+          <i class="fas fa-redo me-1"></i> Resend OTP Code
+        </a>
+      </div>
+    </div>
+
+    <!-- Back to Registration -->
+    <div class="text-center mt-4 pt-2 border-top border-secondary-subtle">
+      <a href="{% url 'accounts:register' %}" class="text-muted small text-decoration-none hover-lift d-inline-flex align-items-center gap-1">
+        <i class="fas fa-arrow-left text-primary"></i> Back to Registration
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Interactive OTP JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = document.querySelectorAll('.otp-digit-box');
+  const combinedInput = document.getElementById('combinedOtpInput');
+  const form = document.getElementById('otpForm');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const pasteBtn = document.getElementById('pasteOtpBtn');
+
+  // Focus first input on load
+  if (inputs.length > 0) {
+    inputs[0].focus();
+  }
+
+  function syncCombinedValue() {
+    let code = '';
+    inputs.forEach(input => {
+      code += input.value.trim();
+      if (input.value.trim()) {
+        input.classList.add('filled');
+      } else {
+        input.classList.remove('filled');
+      }
+    });
+    combinedInput.value = code;
+    return code;
+  }
+
+  // Handle Input typing, keydown, and navigation
+  inputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/[^0-9]/g, '');
+      input.value = val ? val.slice(-1) : '';
+
+      const code = syncCombinedValue();
+
+      if (val && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+
+      // Auto-submit when all 6 digits are entered
+      if (code.length === 6) {
+        submitFormWithFeedback();
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        if (!input.value && index > 0) {
+          inputs[index - 1].focus();
+          inputs[index - 1].value = '';
+          syncCombinedValue();
+        }
+      } else if (e.key === 'ArrowLeft' && index > 0) {
+        inputs[index - 1].focus();
+      } else if (e.key === 'ArrowRight' && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+    });
+
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+      fillOtpCode(pasteData);
+    });
+  });
+
+  function fillOtpCode(code) {
+    const digits = code.replace(/[^0-9]/g, '').slice(0, 6);
+    if (!digits) return;
+
+    digits.split('').forEach((d, i) => {
+      if (inputs[i]) {
+        inputs[i].value = d;
+      }
+    });
+
+    const finalCode = syncCombinedValue();
+    const nextIdx = Math.min(digits.length, inputs.length - 1);
+    inputs[nextIdx].focus();
+
+    if (finalCode.length === 6) {
+      submitFormWithFeedback();
+    }
+  }
+
+  // Paste button handler for mobile touch
+  if (pasteBtn && navigator.clipboard && navigator.clipboard.readText) {
+    pasteBtn.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          fillOtpCode(text);
+        }
+      } catch (err) {
+        // Fallback prompt for browsers blocking clipboard access
+        const manual = prompt("Paste your 6-digit OTP code here:");
+        if (manual) fillOtpCode(manual);
+      }
+    });
+  }
+
+  function submitFormWithFeedback() {
+    if (verifyBtn) {
+      const textSpan = verifyBtn.querySelector('.verify-text');
+      const loadSpan = verifyBtn.querySelector('.verify-loading');
+      if (textSpan && loadSpan) {
+        textSpan.classList.add('d-none');
+        loadSpan.classList.remove('d-none');
+        loadSpan.classList.add('d-inline-flex');
+      }
+      verifyBtn.disabled = true;
+    }
+    form.submit();
+  }
+
+  form.addEventListener('submit', (e) => {
+    const code = syncCombinedValue();
+    if (code.length !== 6) {
+      e.preventDefault();
+      alert('Please enter all 6 digits of the verification OTP code.');
+      const firstEmpty = Array.from(inputs).find(i => !i.value);
+      if (firstEmpty) firstEmpty.focus();
+      return;
+    }
+    submitFormWithFeedback();
+  });
+
+  // Resend Countdown Timer (60s)
+  let timeLeft = 60;
+  const countdownEl = document.getElementById('countdownTimer');
+  const countdownWrapper = document.getElementById('resendCountdownWrapper');
+  const resendBtnWrapper = document.getElementById('resendBtnWrapper');
+
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    if (countdownEl) {
+      countdownEl.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (countdownWrapper) countdownWrapper.classList.add('d-none');
+      if (resendBtnWrapper) {
+        resendBtnWrapper.classList.remove('d-none');
+        resendBtnWrapper.classList.add('animate-float');
+      }
+    }
+  }, 1000);
+});
+</script>
+{% endblock %}

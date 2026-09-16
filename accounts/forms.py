@@ -34,8 +34,9 @@ class UserRegisterForm(forms.ModelForm):
 class UserProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['theme_preference', 'preferred_language', 'bio']
+        fields = ['avatar_url', 'theme_preference', 'preferred_language', 'bio']
         widgets = {
+            'avatar_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://avatars.githubusercontent.com/u/...'}),
             'theme_preference': forms.Select(attrs={'class': 'form-select'}),
             'preferred_language': forms.Select(choices=[
                 ('en', 'English'),

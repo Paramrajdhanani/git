@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const langDataEl = document.getElementById('chart-languages-data');
   const starDataEl = document.getElementById('chart-stars-data');
+  const dnaDataEl = document.getElementById('chart-dna-data');
 
   if (langDataEl) {
     try {
@@ -26,6 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
       initSizeChart(starData);
     } catch (e) {
       console.error("Error parsing stars chart data:", e);
+    }
+  }
+
+  if (dnaDataEl) {
+    try {
+      const dnaData = JSON.parse(dnaDataEl.textContent);
+      initDnaChart(dnaData);
+    } catch (e) {
+      console.error("Error parsing DNA chart data:", e);
     }
   }
 
@@ -63,6 +73,12 @@ function updateChartsTheme() {
       if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = colors.gridLine;
     }
     
+    if (chart.options.scales?.r) {
+      if (chart.options.scales.r.ticks) chart.options.scales.r.ticks.color = colors.textMuted;
+      if (chart.options.scales.r.pointLabels) chart.options.scales.r.pointLabels.color = colors.textMain;
+      if (chart.options.scales.r.grid) chart.options.scales.r.grid.color = colors.gridLine;
+    }
+
     chart.update();
   });
 }
@@ -133,6 +149,12 @@ function initLanguageChart(data) {
         }
       },
       cutout: '70%',
+      animation: {
+        animateScale: true,
+        animateRotate: true,
+        duration: 1400,
+        easing: 'easeOutQuart'
+      }
     }
   });
 
@@ -144,7 +166,6 @@ function initStarsChart(repos) {
   const ctx = document.getElementById('starsBarChart');
   if (!ctx) return;
 
-  // Filter top 8 starred repos
   const sortedRepos = [...repos].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 8);
   const labels = sortedRepos.map(r => r.name);
   const values = sortedRepos.map(r => r.stargazers_count);
@@ -178,6 +199,10 @@ function initStarsChart(repos) {
       },
       plugins: {
         legend: { display: false }
+      },
+      animation: {
+        duration: 1200,
+        easing: 'easeOutQuart'
       }
     }
   });
@@ -223,10 +248,62 @@ function initSizeChart(repos) {
       },
       plugins: {
         legend: { display: false }
+      },
+      animation: {
+        duration: 1300,
+        easing: 'easeOutQuart'
       }
     }
   });
 
   activeCharts.push(chart);
 }
+
+// Developer DNA Radar Chart
+function initDnaChart(dnaData) {
+  const ctx = document.getElementById('dnaRadarChart');
+  if (!ctx) return;
+
+  const labels = Object.keys(dnaData);
+  const values = Object.values(dnaData);
+  const themeColors = getThemeColors();
+
+  const chart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'DNA Score',
+        data: values,
+        backgroundColor: 'rgba(35, 134, 54, 0.25)',
+        borderColor: '#2ea043',
+        pointBackgroundColor: '#2ea043',
+        pointBorderColor: '#fff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { color: themeColors.gridLine },
+          grid: { color: themeColors.gridLine },
+          pointLabels: { color: themeColors.textMain, font: { family: 'Inter', size: 10 } },
+          ticks: { display: false, max: 100 }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      },
+      animation: {
+        duration: 1500,
+        easing: 'easeInOutCubic'
+      }
+    }
+  });
+
+  activeCharts.push(chart);
+}
+
 

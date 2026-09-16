@@ -5,11 +5,13 @@
 {% block content %}
 <section class="hero-section text-center">
   <div class="container">
-    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-3" data-aos="fade-down">
-      <i class="fas fa-sparkles me-1"></i> Powered by GitHub REST API & AI Analytics
-    </span>
+    <div class="d-inline-block mb-3 animate-float">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 shadow-sm pulse-aura">
+        <i class="fas fa-sparkles me-1 text-warning"></i> Powered by GitHub REST API & AI Analytics
+      </span>
+    </div>
     
-    <h1 class="hero-title mb-3" data-aos="fade-up">
+    <h1 class="hero-title mb-3 gradient-flow-text" data-aos="fade-up">
       Discover Any GitHub Developer <br> With Deep Analytics
     </h1>
     
@@ -20,7 +22,7 @@
     <!-- Floating Search Box -->
     <div class="search-box-wrapper mb-5" data-aos="zoom-in" data-aos-delay="200">
       <form action="{% url 'finder:home' %}" method="GET" class="search-form">
-        <div class="search-input-group">
+        <div class="search-input-group hover-glow">
           <i class="fas fa-search text-muted fa-lg ms-2"></i>
           <input 
             type="text" 
@@ -40,13 +42,29 @@
       <div class="autocomplete-dropdown text-start"></div>
     </div>
 
+    <!-- Quick Action CTA Buttons Bar -->
+    <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mb-5" data-aos="fade-up" data-aos-delay="220">
+      <a href="{% url 'finder:compare' %}" class="btn btn-primary magnetic-btn rounded-pill px-4 py-2 hover-glow">
+        <i class="fas fa-balance-scale me-1"></i> Compare Developers
+      </a>
+      <a href="{% url 'finder:search_repos' %}" class="btn btn-outline-primary magnetic-btn rounded-pill px-4 py-2 hover-lift">
+        <i class="fas fa-boxes me-1"></i> Search Repositories
+      </a>
+      <a href="{% url 'finder:trending' %}" class="btn btn-outline-secondary magnetic-btn rounded-pill px-4 py-2 hover-lift">
+        <i class="fas fa-fire text-danger me-1"></i> Trending Profiles
+      </a>
+      <button onclick="openCommandPalette()" class="btn btn-outline-secondary magnetic-btn rounded-pill px-3 py-2 hover-lift d-none d-sm-inline-flex" title="Quick Command Palette (Ctrl+K)">
+        <i class="fas fa-terminal text-primary me-1"></i> Quick Find <kbd class="bg-secondary text-white px-2 py-0 ms-2 rounded small">Ctrl+K</kbd>
+      </button>
+    </div>
+
     <!-- Recent Searches Bar (If available) -->
     {% if recent_searches %}
       <div class="mb-5" data-aos="fade-up" data-aos-delay="250">
         <div class="text-muted small text-uppercase fw-semibold mb-2">Recent Searches</div>
         <div class="d-flex justify-content-center flex-wrap gap-2">
           {% for item in recent_searches %}
-            <a href="{% url 'finder:profile' username=item.username %}" class="btn btn-sm glass-card text-main rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2">
+            <a href="{% url 'finder:profile' username=item.username %}" class="btn btn-sm glass-card text-main rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 hover-lift">
               {% if item.avatar_url %}
                 <img src="{{ item.avatar_url }}" style="width: 20px; height: 20px; border-radius: 50%;" alt="">
               {% else %}
@@ -58,26 +76,39 @@
         </div>
       </div>
     {% endif %}
+
+    <!-- Scroll Down Explore Indicator -->
+    <div class="scroll-down-wrapper" data-aos="fade-up" data-aos-delay="300">
+      <a href="#explore-section" class="scroll-down-btn text-decoration-none" title="Scroll down to explore">
+        <span class="scroll-down-text">Scroll to explore</span>
+        <div class="mouse-scroll-indicator">
+          <div class="mouse-wheel"></div>
+        </div>
+        <i class="fas fa-chevron-down scroll-chevron"></i>
+      </a>
+    </div>
   </div>
 </section>
 
 <!-- Trending GitHub Developers Grid -->
-<section class="py-5">
+<section id="explore-section" class="py-5">
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1"><i class="fas fa-fire text-danger me-2"></i> Trending Developers</h3>
+        <h3 class="fw-bold mb-1"><i class="fas fa-fire text-danger me-2 animate-float"></i> Trending Developers</h3>
         <p class="text-muted mb-0">Discover famous open-source creators and community leaders.</p>
       </div>
-      <a href="{% url 'finder:trending' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">View All</a>
+      <a href="{% url 'finder:trending' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 hover-lift">View All</a>
     </div>
 
     <div class="row g-4">
       {% for dev in trending_devs %}
         <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
-          <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+          <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between hover-lift">
             <div class="d-flex align-items-center gap-3 mb-3">
-              <img src="{{ dev.avatar_url }}" alt="{{ dev.name }}" class="rounded-circle border border-primary border-2" style="width: 60px; height: 60px;">
+              <div class="position-relative">
+                <img src="{{ dev.avatar_url }}" alt="{{ dev.name }}" class="rounded-circle border border-primary border-2" style="width: 60px; height: 60px; object-fit: cover;">
+              </div>
               <div>
                 <h5 class="fw-bold mb-0 text-main">{{ dev.name }}</h5>
                 <a href="{% url 'finder:profile' username=dev.username %}" class="text-primary small fw-semibold">@{{ dev.username }}</a>
@@ -88,7 +119,7 @@
               <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">
                 <i class="fas fa-code me-1"></i> {{ dev.lang }}
               </span>
-              <a href="{% url 'finder:profile' username=dev.username %}" class="btn btn-sm btn-primary rounded-pill px-3">
+              <a href="{% url 'finder:profile' username=dev.username %}" class="btn btn-sm btn-primary rounded-pill px-3 hover-lift">
                 View Profile <i class="fas fa-chevron-right ms-1"></i>
               </a>
             </div>
@@ -109,22 +140,22 @@
 
     <div class="row g-4">
       <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
-        <div class="glass-card p-4 text-center h-100">
-          <div class="stat-icon mb-3"><i class="fas fa-chart-pie"></i></div>
+        <div class="glass-card p-4 text-center h-100 hover-lift hover-bounce-icon">
+          <div class="stat-icon mb-3 animate-float"><i class="fas fa-chart-pie"></i></div>
           <h4 class="fw-bold mb-2">Interactive Charts</h4>
           <p class="text-muted small">Visualize repository language breakdown, size distribution, and top starred projects with Chart.js.</p>
         </div>
       </div>
       <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-        <div class="glass-card p-4 text-center h-100">
-          <div class="stat-icon mb-3"><i class="fas fa-balance-scale"></i></div>
+        <div class="glass-card p-4 text-center h-100 hover-lift hover-bounce-icon">
+          <div class="stat-icon mb-3 animate-float-delayed"><i class="fas fa-balance-scale"></i></div>
           <h4 class="fw-bold mb-2">Developer Comparison</h4>
           <p class="text-muted small">Compare two developers side-by-side with radar charts, stars count, and repository metrics.</p>
         </div>
       </div>
       <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-        <div class="glass-card p-4 text-center h-100">
-          <div class="stat-icon mb-3"><i class="fas fa-file-pdf"></i></div>
+        <div class="glass-card p-4 text-center h-100 hover-lift hover-bounce-icon">
+          <div class="stat-icon mb-3 animate-float"><i class="fas fa-file-pdf"></i></div>
           <h4 class="fw-bold mb-2">PDF & CSV Exports</h4>
           <p class="text-muted small">Download formatted developer resume reports or export repository listings into CSV format with one click.</p>
         </div>

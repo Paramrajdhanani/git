@@ -12,5 +12,9 @@ urlpatterns = [
     path('org/<str:orgname>/', views.OrgDetailView.as_view(), name='org_detail'),
     path('rate-limit/', views.RateLimitStatusView.as_view(), name='rate_limit'),
     path('trending/', views.TrendingView.as_view(), name='trending'),
+    path('search/repos/', views.RepoSearchView.as_view(), name='search_repos'),
+    path('api/repo/readme/', views.RepoReadmeView.as_view(), name='repo_readme'),
+    path('api/user/<str:username>/events/', views.UserEventsView.as_view(), name='user_events'),
     path('api/autocomplete/', views.AutocompleteView.as_view(), name='autocomplete'),
 ]
+

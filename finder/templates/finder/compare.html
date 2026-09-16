@@ -6,17 +6,17 @@
 <div class="container py-4">
   
   <div class="text-center mb-5" data-aos="fade-down">
-    <h1 class="hero-title mb-2">GitHub User Comparison</h1>
-    <p class="text-muted">Compare two GitHub developers side-by-side across key open-source metrics.</p>
+    <h1 class="hero-title mb-2 gradient-flow-text">GitHub User Comparison</h1>
+    <p class="hero-subtitle mx-auto">Compare two GitHub developers side-by-side across key open-source metrics.</p>
     
     <!-- Compare Input Form -->
-    <div class="glass-card p-4 max-width-700 mx-auto mt-4">
+    <div class="glass-card p-4 max-width-700 mx-auto mt-4 hover-glow">
       <form action="{% url 'finder:compare' %}" method="GET" class="row g-3 align-items-center">
         <div class="col-md-5">
           <input type="text" name="u1" class="form-control glass-card text-main border-secondary rounded-pill" placeholder="User 1 (e.g. torvalds)" value="{{ u1 }}" required>
         </div>
         <div class="col-md-2 text-center">
-          <span class="badge bg-primary rounded-circle p-2 fs-6">VS</span>
+          <span class="badge bg-primary rounded-circle p-2 fs-6 pulse-aura animate-float">VS</span>
         </div>
         <div class="col-md-5">
           <input type="text" name="u2" class="form-control glass-card text-main border-secondary rounded-pill" placeholder="User 2 (e.g. gaearon)" value="{{ u2 }}" required>
@@ -31,13 +31,20 @@
   </div>
 
   {% if comparison %}
+    <div class="glass-card p-4 text-center mb-4 border border-warning winner-badge-pulse" data-aos="zoom-in">
+      <i class="fas fa-trophy fa-3x text-warning mb-2 animate-float"></i>
+      <h3 class="fw-bold mb-1">Battle Champion: <span class="text-warning">@{{ comparison.overall_winner }}</span></h3>
+      <p class="text-muted mb-0">Based on combined Stars, Followers, and Repository Impact.</p>
+    </div>
+
     <div class="row g-4 mb-5" data-aos="fade-up">
+
       
       <!-- Developer 1 Card -->
       <div class="col-md-6">
         <div class="glass-card p-4 h-100 border border-primary">
           <div class="d-flex align-items-center gap-3 mb-4">
-            <img src="{{ comparison.user1.profile.avatar_url }}" class="rounded-circle border border-primary border-3" style="width: 80px; height: 80px;" alt="">
+            <img src="{{ comparison.user1.profile.avatar_url }}" onclick="openAvatarModal('{{ comparison.user1.profile.avatar_url }}', '{{ comparison.user1.profile.login }}', '{{ comparison.user1.profile.name|default:comparison.user1.profile.login|escapejs }}')" class="rounded-circle border border-primary border-3 cursor-pointer hover-lift" style="width: 80px; height: 80px; object-fit: cover;" title="Click to view profile photo" alt="">
             <div>
               <h3 class="fw-bold mb-0 text-main">{{ comparison.user1.profile.name|default:comparison.user1.profile.login }}</h3>
               <a href="{% url 'finder:profile' username=comparison.user1.profile.login %}" class="text-primary fw-semibold">@{{ comparison.user1.profile.login }}</a>
@@ -98,7 +105,7 @@
       <div class="col-md-6">
         <div class="glass-card p-4 h-100 border border-info">
           <div class="d-flex align-items-center gap-3 mb-4">
-            <img src="{{ comparison.user2.profile.avatar_url }}" class="rounded-circle border border-info border-3" style="width: 80px; height: 80px;" alt="">
+            <img src="{{ comparison.user2.profile.avatar_url }}" onclick="openAvatarModal('{{ comparison.user2.profile.avatar_url }}', '{{ comparison.user2.profile.login }}', '{{ comparison.user2.profile.name|default:comparison.user2.profile.login|escapejs }}')" class="rounded-circle border border-info border-3 cursor-pointer hover-lift" style="width: 80px; height: 80px; object-fit: cover;" title="Click to view profile photo" alt="">
             <div>
               <h3 class="fw-bold mb-0 text-main">{{ comparison.user2.profile.name|default:comparison.user2.profile.login }}</h3>
               <a href="{% url 'finder:profile' username=comparison.user2.profile.login %}" class="text-info fw-semibold">@{{ comparison.user2.profile.login }}</a>
@@ -159,4 +166,53 @@
   {% endif %}
 
 </div>
+
+<!-- High-Resolution Profile Photo Lightbox Modal -->
+<div class="modal fade" id="avatarPhotoModal" tabindex="-1" aria-labelledby="avatarPhotoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-card border-primary">
+      <div class="modal-header border-bottom border-secondary-subtle">
+        <h5 class="modal-title fw-bold text-main" id="avatarPhotoModalLabel">
+          <i class="fas fa-image text-primary me-2"></i> Developer Profile Photo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3 position-relative d-inline-block">
+          <img id="modalAvatarImg" src="" alt="Profile Photo" class="img-fluid rounded-circle border border-primary border-4 shadow-lg" style="max-height: 420px; max-width: 420px; object-fit: cover;">
+        </div>
+        <h4 id="modalAvatarName" class="fw-bold text-main mb-1"></h4>
+        <p id="modalAvatarUser" class="text-primary fw-semibold mb-0"></p>
+      </div>
+      <div class="modal-footer border-top border-secondary-subtle justify-content-between">
+        <a id="modalAvatarHdLink" href="" target="_blank" class="btn btn-outline-info rounded-pill px-4">
+          <i class="fas fa-external-link-alt me-1"></i> Open Original HD Photo
+        </a>
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAvatarModal(url, username, name) {
+  const imgEl = document.getElementById('modalAvatarImg');
+  const nameEl = document.getElementById('modalAvatarName');
+  const userEl = document.getElementById('modalAvatarUser');
+  const hdLink = document.getElementById('modalAvatarHdLink');
+
+  if (imgEl) imgEl.src = url;
+  if (nameEl) nameEl.textContent = name || username;
+  if (userEl) userEl.textContent = '@' + username;
+  if (hdLink) hdLink.href = url;
+
+  const modalEl = document.getElementById('avatarPhotoModal');
+  if (modalEl) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
+}
+</script>
 {% endblock %}

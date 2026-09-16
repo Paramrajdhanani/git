@@ -6,6 +6,7 @@
 <!-- Hidden Chart Data Payload -->
 {{ stats.languages|json_script:"chart-languages-data" }}
 {{ repos|json_script:"chart-stars-data" }}
+{{ stats.dna_scores|json_script:"chart-dna-data" }}
 
 <div class="container py-4">
   
@@ -13,8 +14,11 @@
   <div class="glass-card p-4 p-md-5 mb-4" data-aos="fade-down">
     <div class="row align-items-center g-4">
       <div class="col-md-auto text-center">
-        <div class="profile-avatar-wrapper">
+        <div class="profile-avatar-wrapper cursor-pointer" onclick="openAvatarModal('{{ profile.avatar_url }}', '{{ profile.login }}', '{{ profile.name|default:profile.login|escapejs }}')" title="Click to view full profile photo">
           <img src="{{ profile.avatar_url }}" alt="{{ profile.login }}" class="profile-avatar">
+          <div class="avatar-hover-overlay">
+            <i class="fas fa-search-plus fa-lg"></i>
+          </div>
           {% if profile.hireable %}
             <span class="badge-hireable"><i class="fas fa-briefcase me-1"></i> Hireable</span>
           {% endif %}
@@ -45,6 +49,10 @@
               <i class="fas fa-copy me-1"></i> Copy Link
             </button>
 
+            <button class="btn btn-outline-success rounded-pill px-3" onclick="generateShareCard('{{ profile.login }}', '{{ profile.name|default:profile.login|escapejs }}', '{{ profile.avatar_url }}', '{{ stats.primary_language }}', '{{ stats.developer_type }}', '{{ stats.total_stars }}', '{{ profile.public_repos }}')">
+              <i class="fas fa-id-card me-1"></i> Share Card
+            </button>
+
             <div class="dropdown">
               <button class="btn btn-primary rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
                 <i class="fas fa-download me-1"></i> Export
@@ -67,7 +75,7 @@
         {% endif %}
 
         <!-- Profile Metadata Badges -->
-        <div class="d-flex flex-wrap gap-3 text-muted small">
+        <div class="d-flex flex-wrap gap-3 text-muted small mb-3">
           {% if profile.company %}
             <div><i class="fas fa-building text-primary me-1"></i> {{ profile.company }}</div>
           {% endif %}
@@ -91,6 +99,20 @@
           {% endif %}
           <div><i class="fas fa-calendar-alt text-success me-1"></i> Joined {{ created_formatted }}</div>
         </div>
+
+        <!-- Developer Archetype Badges -->
+        {% if stats.badges %}
+          <div class="pt-3 border-top border-secondary-subtle">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="small text-muted fw-semibold me-1"><i class="fas fa-award text-warning me-1"></i> Archetype Badges:</span>
+              {% for badge in stats.badges %}
+                <span class="badge bg-{{ badge.color }}-subtle text-{{ badge.color }} border border-{{ badge.color }} px-3 py-2 rounded-pill hover-lift" title="{{ badge.desc }}">
+                  <i class="fas {{ badge.icon }} me-1"></i> {{ badge.title }}
+                </span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
 
         {% if user_orgs %}
           <div class="mt-3 pt-3 border-top border-secondary-subtle">
@@ -130,28 +152,28 @@
       </a>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="200">
-      <div class="glass-card stat-card">
+      <div class="glass-card stat-card hover-lift hover-bounce-icon">
         <div class="stat-icon"><i class="fas fa-code-branch"></i></div>
         <div class="stat-value counter-value" data-target="{{ profile.public_repos }}">0</div>
         <div class="stat-label">Repositories</div>
       </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="250">
-      <div class="glass-card stat-card">
+      <div class="glass-card stat-card hover-lift hover-bounce-icon">
         <div class="stat-icon"><i class="fas fa-star text-warning"></i></div>
         <div class="stat-value counter-value" data-target="{{ stats.total_stars }}">0</div>
         <div class="stat-label">Total Stars</div>
       </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="300">
-      <div class="glass-card stat-card">
+      <div class="glass-card stat-card hover-lift hover-bounce-icon">
         <div class="stat-icon"><i class="fas fa-code-fork text-info"></i></div>
         <div class="stat-value counter-value" data-target="{{ stats.total_forks }}">0</div>
         <div class="stat-label">Total Forks</div>
       </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2" data-aos="fade-up" data-aos-delay="350">
-      <div class="glass-card stat-card">
+      <div class="glass-card stat-card hover-lift hover-bounce-icon">
         <div class="stat-icon"><i class="fas fa-eye text-primary"></i></div>
         <div class="stat-value counter-value" data-target="{{ stats.total_watchers }}">0</div>
         <div class="stat-label">Watchers</div>
@@ -204,33 +226,71 @@
     </div>
   </div>
 
-  <!-- Chart Visualizations Grid -->
+  <!-- Chart Visualizations Grid (Doughnut, Stars, Size, DNA Radar) -->
   <div class="row g-4 mb-5">
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="100">
       <div class="glass-card p-4 h-100">
         <h5 class="fw-bold mb-3"><i class="fas fa-chart-pie text-primary me-2"></i> Language Usage</h5>
-        <div style="position: relative; height: 240px;">
+        <div style="position: relative; height: 220px;">
           <canvas id="languageDoughnutChart"></canvas>
         </div>
       </div>
     </div>
     
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="200">
       <div class="glass-card p-4 h-100">
-        <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i> Most Starred Repos</h5>
-        <div style="position: relative; height: 240px;">
+        <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i> Most Starred</h5>
+        <div style="position: relative; height: 220px;">
           <canvas id="starsBarChart"></canvas>
         </div>
       </div>
     </div>
 
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="300">
       <div class="glass-card p-4 h-100">
-        <h5 class="fw-bold mb-3"><i class="fas fa-database text-info me-2"></i> Repository Size (MB)</h5>
-        <div style="position: relative; height: 240px;">
+        <h5 class="fw-bold mb-3"><i class="fas fa-database text-info me-2"></i> Size (MB)</h5>
+        <div style="position: relative; height: 220px;">
           <canvas id="sizeChart"></canvas>
         </div>
       </div>
+    </div>
+
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="400">
+      <div class="glass-card p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="fas fa-brain text-success me-2"></i> Developer DNA</h5>
+        <div style="position: relative; height: 220px;">
+          <canvas id="dnaRadarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Timeline Section -->
+  <div class="mb-5" data-aos="fade-up">
+    <div class="glass-card p-4">
+      <h4 class="fw-bold mb-3 text-main"><i class="fas fa-clock-rotate-left text-primary me-2"></i> Recent Public Activity</h4>
+      {% if user_events %}
+        <div class="row g-3">
+          {% for ev in user_events %}
+            <div class="col-md-6">
+              <div class="p-3 glass-card border border-secondary-subtle rounded-3 d-flex align-items-start gap-3">
+                <span class="badge bg-{{ ev.color }}-subtle text-{{ ev.color }} p-2 rounded-circle fs-6">
+                  <i class="fas {{ ev.icon }}"></i>
+                </span>
+                <div class="flex-grow-1 overflow-hidden">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ ev.repo_url }}" target="_blank" class="fw-bold text-main small text-truncate me-2">{{ ev.repo }}</a>
+                    <span class="text-muted small" style="font-size: 0.75rem;">{{ ev.time }}</span>
+                  </div>
+                  <p class="text-muted mb-0 small text-truncate">{{ ev.desc }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted mb-0 text-center py-3">No recent public activity logs found.</p>
+      {% endif %}
     </div>
   </div>
 
@@ -248,12 +308,12 @@
         <!-- Connection Nav Tabs -->
         <ul class="nav nav-pills gap-2" id="communityTab" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active rounded-pill px-4" id="following-tab" data-bs-toggle="tab" data-bs-target="#following-tab-pane" type="button" role="tab">
+            <button class="nav-link {% if user_following or not user_followers %}active{% endif %} rounded-pill px-4" id="following-tab" data-bs-toggle="tab" data-bs-target="#following-tab-pane" type="button" role="tab">
               <i class="fas fa-user-friends me-1"></i> Following <span class="badge bg-primary-subtle text-primary ms-1">{{ profile.following }}</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followers-tab-pane" type="button" role="tab">
+            <button class="nav-link {% if not user_following and user_followers %}active{% endif %} rounded-pill px-4" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followers-tab-pane" type="button" role="tab">
               <i class="fas fa-users me-1"></i> Followers <span class="badge bg-primary-subtle text-primary ms-1">{{ profile.followers }}</span>
             </button>
           </li>
@@ -263,7 +323,7 @@
       <!-- Tab Content -->
       <div class="tab-content" id="communityTabContent">
         <!-- Following Tab Pane -->
-        <div class="tab-pane fade show active" id="following-tab-pane" role="tabpanel" tabindex="0">
+        <div class="tab-pane fade {% if user_following or not user_followers %}show active{% endif %}" id="following-tab-pane" role="tabpanel" tabindex="0">
           {% if user_following %}
             <div class="row g-3">
               {% for u in user_following %}
@@ -292,7 +352,7 @@
         </div>
 
         <!-- Followers Tab Pane -->
-        <div class="tab-pane fade" id="followers-tab-pane" role="tabpanel" tabindex="0">
+        <div class="tab-pane fade {% if not user_following and user_followers %}show active{% endif %}" id="followers-tab-pane" role="tabpanel" tabindex="0">
           {% if user_followers %}
             <div class="row g-3">
               {% for u in user_followers %}
@@ -393,17 +453,17 @@
 
           <!-- Action Buttons Bar & Footer Metrics -->
           <div class="pt-3 border-top border-secondary-subtle mt-auto">
-            <!-- Action Toolbar: Download ZIP, Copy Clone, GitHub Link -->
+            <!-- Action Toolbar: Download ZIP, Copy Clone, View README -->
             <div class="d-flex flex-wrap gap-1 mb-2 no-print">
               <a href="{{ repo.zip_download_url }}" download class="btn btn-sm btn-primary rounded-pill px-2 py-1 small text-decoration-none" title="Download ZIP Archive">
-                <i class="fas fa-download me-1"></i> Download ZIP
+                <i class="fas fa-download me-1"></i> ZIP
               </a>
               <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 small btn-copy-clone" data-clone="{{ repo.clone_url }}" title="Copy Git Clone Command">
                 <i class="fas fa-terminal me-1"></i> Clone
               </button>
-              <a href="{{ repo.html_url }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 small ms-auto" title="View on GitHub">
-                <i class="fab fa-github"></i>
-              </a>
+              <button class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 small ms-auto" onclick="openReadmeModal('{{ profile.login }}', '{{ repo.name }}')" title="Read Documentation">
+                <i class="fas fa-book-open me-1"></i> README
+              </button>
             </div>
 
             <div class="d-flex align-items-center justify-content-between small text-muted">
@@ -450,6 +510,82 @@
   </div>
 
 </div>
+
+<!-- High-Resolution Profile Photo Lightbox Modal -->
+<div class="modal fade" id="avatarPhotoModal" tabindex="-1" aria-labelledby="avatarPhotoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-card border-primary">
+      <div class="modal-header border-bottom border-secondary-subtle">
+        <h5 class="modal-title fw-bold text-main" id="avatarPhotoModalLabel">
+          <i class="fas fa-image text-primary me-2"></i> Developer Profile Photo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3 position-relative d-inline-block">
+          <img id="modalAvatarImg" src="" alt="Profile Photo" class="img-fluid rounded-circle border border-primary border-4 shadow-lg" style="max-height: 420px; max-width: 420px; object-fit: cover;">
+        </div>
+        <h4 id="modalAvatarName" class="fw-bold text-main mb-1"></h4>
+        <p id="modalAvatarUser" class="text-primary fw-semibold mb-0"></p>
+      </div>
+      <div class="modal-footer border-top border-secondary-subtle justify-content-between">
+        <a id="modalAvatarHdLink" href="" target="_blank" class="btn btn-outline-info rounded-pill px-4">
+          <i class="fas fa-external-link-alt me-1"></i> Open Original HD Photo
+        </a>
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Repository README Modal -->
+<div class="modal fade" id="readmeModal" tabindex="-1" aria-labelledby="readmeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content glass-card border-primary">
+      <div class="modal-header border-bottom border-secondary-subtle">
+        <h5 class="modal-title fw-bold text-main" id="readmeModalLabel">
+          <i class="fas fa-book-open text-primary me-2"></i> <span id="readmeModalRepoName">Repository Documentation</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4 overflow-auto" style="max-height: 70vh;">
+        <div id="readmeModalSpinner" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-2">Loading repository README...</p>
+        </div>
+        <div id="readmeModalBody" class="markdown-body text-main" style="display: none;"></div>
+      </div>
+      <div class="modal-footer border-top border-secondary-subtle">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share Developer Card Modal -->
+<div class="modal fade" id="shareCardModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-card border-success">
+      <div class="modal-header border-bottom border-secondary-subtle">
+        <h5 class="modal-title fw-bold text-main"><i class="fas fa-id-card text-success me-2"></i> Developer Share Card</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <p class="text-muted small">Generated high-resolution developer profile card ready for social sharing:</p>
+        <div class="d-inline-block shadow-lg rounded-4 overflow-hidden mb-3">
+          <canvas id="shareCardCanvas" width="600" height="340" style="max-width: 100%; height: auto; display: block; border-radius: 16px;"></canvas>
+        </div>
+      </div>
+      <div class="modal-footer border-top border-secondary-subtle justify-content-between">
+        <button class="btn btn-success rounded-pill px-4" onclick="downloadShareCard()">
+          <i class="fas fa-download me-1"></i> Download PNG
+        </button>
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -463,5 +599,24 @@ function switchCommunityTab(tabId) {
     tab.show();
   }
 }
+
+function openAvatarModal(url, username, name) {
+  const imgEl = document.getElementById('modalAvatarImg');
+  const nameEl = document.getElementById('modalAvatarName');
+  const userEl = document.getElementById('modalAvatarUser');
+  const hdLink = document.getElementById('modalAvatarHdLink');
+
+  if (imgEl) imgEl.src = url;
+  if (nameEl) nameEl.textContent = name || username;
+  if (userEl) userEl.textContent = '@' + username;
+  if (hdLink) hdLink.href = url;
+
+  const modalEl = document.getElementById('avatarPhotoModal');
+  if (modalEl) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
+}
 </script>
 {% endblock %}
+

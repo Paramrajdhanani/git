@@ -3,60 +3,121 @@
 {% block title %}Create Account - GitHub Profile Finder{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4 py-md-5">
   <div class="glass-card p-4 p-md-5 max-width-600 mx-auto" data-aos="zoom-in">
+    
+    <!-- Header Badge & Icon -->
     <div class="text-center mb-4">
-      <i class="fas fa-user-plus fa-3x text-primary mb-2"></i>
-      <h2 class="fw-bold text-main">Create Your Account</h2>
-      <p class="text-muted small">Save favorite developer profiles and keep track of your search analytics.</p>
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 p-3 shadow-sm" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); width: 70px; height: 70px;">
+        <i class="fas fa-user-plus fa-2x text-primary"></i>
+      </div>
+      <h2 class="fw-bold text-main mb-1">Create Developer Account</h2>
+      <p class="text-muted small mb-0">Join the developer network, track search metrics, and bookmark favorite profiles.</p>
     </div>
 
-    <form method="POST">
+    <!-- Security Notice Pill -->
+    <div class="p-2 px-3 rounded-pill d-flex align-items-center justify-content-center gap-2 mb-4 mx-auto" style="max-width: 420px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25);">
+      <i class="fas fa-shield-alt text-primary small"></i>
+      <span class="small fw-semibold text-main" style="font-size: 0.82rem;">Instant Gmail OTP Verification Enabled</span>
+    </div>
+
+    <!-- Registration Form -->
+    <form method="POST" id="registerForm">
       {% csrf_token %}
       
+      <!-- Name Row -->
       <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label text-main fw-semibold">First Name</label>
-          {{ form.first_name }}
+        <div class="col-12 col-sm-6">
+          <label class="form-label text-main fw-semibold small">First Name</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-user small"></i></span>
+            {{ form.first_name }}
+          </div>
+          {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
         </div>
-        <div class="col-md-6">
-          <label class="form-label text-main fw-semibold">Last Name</label>
-          {{ form.last_name }}
+        <div class="col-12 col-sm-6">
+          <label class="form-label text-main fw-semibold small">Last Name</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-user-tag small"></i></span>
+            {{ form.last_name }}
+          </div>
+          {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>{% endif %}
         </div>
       </div>
 
+      <!-- Username -->
       <div class="mb-3">
-        <label class="form-label text-main fw-semibold">Username</label>
-        {{ form.username }}
+        <label class="form-label text-main fw-semibold small">Username</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-at small"></i></span>
+          {{ form.username }}
+        </div>
         {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
       </div>
 
+      <!-- Email Address -->
       <div class="mb-3">
-        <label class="form-label text-main fw-semibold">Email Address</label>
-        {{ form.email }}
+        <label class="form-label text-main fw-semibold small">Email Address (Gmail)</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-envelope small"></i></span>
+          {{ form.email }}
+        </div>
+        <div class="form-text small text-muted mt-1">We will send a 6-digit OTP code to this email.</div>
         {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
       </div>
 
+      <!-- Password Row -->
       <div class="row g-3 mb-4">
-        <div class="col-md-6">
-          <label class="form-label text-main fw-semibold">Password</label>
-          {{ form.password }}
+        <div class="col-12 col-sm-6">
+          <label class="form-label text-main fw-semibold small">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-lock small"></i></span>
+            {{ form.password }}
+          </div>
+          {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
         </div>
-        <div class="col-md-6">
-          <label class="form-label text-main fw-semibold">Confirm Password</label>
-          {{ form.confirm_password }}
+        <div class="col-12 col-sm-6">
+          <label class="form-label text-main fw-semibold small">Confirm Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--input-border);"><i class="fas fa-check-double small"></i></span>
+            {{ form.confirm_password }}
+          </div>
           {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors.0 }}</div>{% endif %}
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">
-        Create Account <i class="fas fa-arrow-right ms-1"></i>
+      <!-- Submit & Send OTP Button -->
+      <button type="submit" id="submitBtn" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3 shadow">
+        <span class="btn-text d-inline-flex align-items-center gap-2">
+          <i class="fas fa-paper-plane"></i> Send OTP & Continue
+        </span>
+        <span class="btn-loading d-none align-items-center justify-content-center gap-2">
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          Sending OTP to Gmail...
+        </span>
       </button>
 
+      <!-- Already Have Account -->
       <div class="text-center small text-muted">
-        Already have an account? <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold">Sign in here</a>
+        Already have an account? <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold text-decoration-none">Sign in here</a>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+  document.getElementById('registerForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    if (btn) {
+      const textSpan = btn.querySelector('.btn-text');
+      const loadingSpan = btn.querySelector('.btn-loading');
+      if (textSpan && loadingSpan) {
+        textSpan.classList.add('d-none');
+        loadingSpan.classList.remove('d-none');
+        loadingSpan.classList.add('d-inline-flex');
+      }
+      btn.disabled = true;
+    }
+  });
+</script>
 {% endblock %}
